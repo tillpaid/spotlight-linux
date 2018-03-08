@@ -1,0 +1,16 @@
+{
+  "name": "spotlight-linux",
+  "version": "0.1.0",
+  "description": "Alternative Spotlight from Mac OS for Arch Linux",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "./node_modules/.bin/electron ."
+  },
+  "author": "Alexandr Maiboroda",
+  "license": "ISC",
+  "dependencies": {
+    "jQuery": "^1.7.4",
+    "electron": "^1.8.3"
+  }
+}
