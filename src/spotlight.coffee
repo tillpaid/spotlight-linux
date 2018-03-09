@@ -2,6 +2,8 @@ fs = require('fs')
 $ = require('jQuery')
 remote = require('electron').remote
 spawn = require('child_process').spawn
+exec = require('child_process').exec
+execFile = require('child_process').execFile
 
 applicationsFolder = '/usr/share/applications/'
 cacheFile = './cachefile'
@@ -21,7 +23,17 @@ parseApplications = ->
             found = contents.match re
 
             if found && found[1].length
-                applications.push found[1]
+                applicationsData = {}
+                applicationsData.name = found[1]
+
+                re = /Exec=(.*)/
+                found = contents.match re
+
+                if found && found[1].length
+                    applicationsData.exec = found[1]
+
+                console.log applicationsData
+                applications.push applicationsData
 
         cacheData = {
             'expirations': dateNow + 360
@@ -37,10 +49,10 @@ readAppName = (name) ->
     oldApps = []
     counter = 0
 
-    applications.forEach (file) ->
-        if file.toLowerCase().indexOf(name.toLowerCase()) != -1 && counter < 5
-            createText(++counter + '. ' + file)
-            oldApps.push file
+    applications.forEach (application) ->
+        if application.name.toLowerCase().indexOf(name.toLowerCase()) != -1 && counter < 5
+            createText(++counter + '. ' + application.name)
+            oldApps.push application
 
 createText = (text) ->
     container = $('.container')
@@ -52,11 +64,28 @@ createText = (text) ->
 removeText = ->
     $('.text').remove()
 
-runApplication = (name) ->
-    ps = spawn 'wmctrl', ['-v', '-a', name]
+closeWindow = ->
+    window = remote.getCurrentWindow()
+    window.close()
+
+runApplication = (application) ->
+    ps = spawn 'wmctrl', ['-v', '-a', application.name]
 
     ps.stdout.on 'data', (data) ->
         console.log 'stdout: ' + data
+
+    ps.on 'close', (code) ->
+        if code == 1
+            execArray = application.exec.split '%'
+            execApplication = exec execArray[0]
+
+            execApplication.stdout.on 'data', (data) ->
+                console.log 'stdout: ' + data
+
+            execApplication.on 'close', ->
+                closeWindow()
+        else
+            closeWindow()
 
 input = document.getElementById 'appName'
 input.addEventListener 'keyup', (event) ->
@@ -65,12 +94,9 @@ input.addEventListener 'keyup', (event) ->
 
         if event.key > 0 && event.key < 6 && oldApps.length >= event.key
             runApplication oldApps[event.key - 1]
-            window = remote.getCurrentWindow()
-            window.close()
+
     else if event.key == 'Enter'
         runApplication oldApps[0]
-        window = remote.getCurrentWindow()
-        window.close()
     else
         removeText()
         readAppName event.target.value
