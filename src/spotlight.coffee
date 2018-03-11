@@ -6,7 +6,7 @@ exec = require('child_process').exec
 execFile = require('child_process').execFile
 
 applicationsFolder = '/usr/share/applications/'
-cacheFile = './cachefile'
+cacheFile = '/home/alexandr/www/spotlight-linux/cachefile'
 applications = []
 oldApps = []
 
@@ -66,7 +66,9 @@ removeText = ->
 
 closeWindow = ->
     window = remote.getCurrentWindow()
-    window.close()
+    $('appName').val('')
+    # window.close()
+    window.minimize()
 
 runApplication = (application) ->
     ps = spawn 'wmctrl', ['-v', '-a', application.name]
@@ -82,8 +84,7 @@ runApplication = (application) ->
             execApplication.stdout.on 'data', (data) ->
                 console.log 'stdout: ' + data
 
-            execApplication.on 'close', ->
-                closeWindow()
+            closeWindow()
         else
             closeWindow()
 
@@ -94,9 +95,11 @@ input.addEventListener 'keyup', (event) ->
 
         if event.key > 0 && event.key < 6 && oldApps.length >= event.key
             runApplication oldApps[event.key - 1]
+            input.value = ''
 
     else if event.key == 'Enter'
         runApplication oldApps[0]
+        input.value = ''
     else
         removeText()
         readAppName event.target.value
